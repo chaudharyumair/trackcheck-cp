@@ -345,21 +345,18 @@ export const usersRouter = router({
       const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
         type: "magiclink",
         email: targetEmail,
-        options: {
-          redirectTo: `${portalUrl}/auth/callback?impersonated_by=${ctx.authUser!.id}`,
-        },
       });
 
       if (linkError || !linkData?.properties?.hashed_token) {
         throw new Error(linkError?.message ?? "Failed to generate impersonation link");
       }
 
-      const verifyUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${linkData.properties.hashed_token}&type=magiclink&redirect_to=${encodeURIComponent(`${portalUrl}/auth/callback?impersonated_by=${ctx.authUser!.id}`)}`;
+      const impersonateUrl = `${portalUrl}/api/admin/impersonate?token_hash=${encodeURIComponent(linkData.properties.hashed_token)}&type=magiclink&admin_id=${ctx.authUser!.id}`;
 
       return {
         success: true,
         message: `Impersonation session started for ${targetEmail}`,
-        portalUrl: verifyUrl,
+        portalUrl: impersonateUrl,
         targetEmail,
         expiresAt: expiredAt,
         token: tokenRaw,

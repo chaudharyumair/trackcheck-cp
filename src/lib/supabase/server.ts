@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
+const CP_PREFIX = "cp_";
+
 export async function createClient() {
   const cookieStore = await cookies();
 
@@ -11,12 +13,15 @@ export async function createClient() {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll();
+          return cookieStore
+            .getAll()
+            .filter((c) => c.name.startsWith(CP_PREFIX))
+            .map((c) => ({ ...c, name: c.name.slice(CP_PREFIX.length) }));
         },
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(`${CP_PREFIX}${name}`, value, options)
             );
           } catch {
             // Called from Server Component — safe to ignore with middleware

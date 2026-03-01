@@ -235,7 +235,9 @@ export default function UsersPage() {
   const impersonateMutation = trpc.users.impersonate.useMutation({
     onSuccess: (result) => {
       toast.success(`Impersonating ${result.targetEmail}`);
-      window.open(result.portalUrl, "_blank", "noopener,noreferrer");
+      // Open in new tab with noopener/noreferrer so CP session is never touched; consumer app runs in isolated context
+      const w = window.open(result.portalUrl, "_blank", "noopener,noreferrer");
+      if (!w) toast.error("Popup blocked — allow popups for this site to impersonate.");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -362,11 +364,7 @@ export default function UsersPage() {
                   size="icon"
                   className="h-7 w-7"
                   disabled={impersonateMutation.isPending}
-                  onClick={() => {
-                    if (confirm("Impersonate this user? This will be logged.")) {
-                      impersonateMutation.mutate({ targetUserId: u.id });
-                    }
-                  }}
+                  onClick={() => impersonateMutation.mutate({ targetUserId: u.id })}
                 >
                   <Users2 className="size-3.5" />
                 </Button>

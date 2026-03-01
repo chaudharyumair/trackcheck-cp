@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const ADMIN_ROLES = ["super_admin", "finance_admin", "support_admin", "read_only_admin"];
+const CP_PREFIX = "cp_";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -12,15 +13,18 @@ export async function updateSession(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll();
+          return request.cookies
+            .getAll()
+            .filter((c) => c.name.startsWith(CP_PREFIX))
+            .map((c) => ({ ...c, name: c.name.slice(CP_PREFIX.length) }));
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
+            request.cookies.set(`${CP_PREFIX}${name}`, value)
           );
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(`${CP_PREFIX}${name}`, value, options)
           );
         },
       },
